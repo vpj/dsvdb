@@ -16,6 +16,8 @@ A basic database model
        type: 'decimal'
        default: ''
 
+An object of all object models
+
     models =
      Fruit: Fruit
 

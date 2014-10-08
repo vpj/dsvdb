@@ -1,42 +1,34 @@
-#YAML Database
+#DSV Database
 
-YAML database is a document database which stores documents as YAML files. The documents in the database can be maintained by simply editing the yaml files.
+DSVDB is a simple CSV file or TSV file based database. Maintaining data
+manually is as simple as working with a spreadsheet.
 
-This database was designed to be used for systems like CMS systems, where an easy way to edit data is necessary and the number of data objects is not very high. It can be also used to store settings and configurations.
-
-Storing the database as separate files lets you use version control systems like git on the database, which is again ideal for storing settings, configurations, blog posts and CMS content.
-
-###Advantages
-* Can easily change database entries
-* Can use version control on the database
-* Ideal for settings and configurations (user configs etc)
-
-
-###Disadvantages
-* No SQL or similar functionality (like searching the database)
-* Not suitable for storing transactional data
+This database was designed for use as a append only database, with in-memory
+caching.
 
 ##Installation
 
-    npm install yamldb
+    npm install dsvdb
 
-##[Documentation](http://vpj.github.io/yamldb/)
+##Example
 
-##[Example.coffee](http://vpj.github.io/yamldb/example.html)
-
-    yamldb = require 'yamldb'
+    dsvdb = require 'dsvdb'
 
 Define a object model
 
-    class Fruit extends yamldb.Model
+    class Fruit extends dsvdb.Model
      model: 'Fruit'
 
      @defaults
-      handle: ''
-      name: ''
-      price: 0.00
-      description: ''
-      images: []
+      handle:
+       type: 'string'
+       default: ''
+      name:
+       type: 'string'
+       default: ''
+      price:
+       type: 'decimal'
+       default: ''
 
 An object of all object models
 
@@ -45,10 +37,10 @@ An object of all object models
 
 Initialize database, where `testdata` is the path of the database.
 
-    db = new yamldb.Database 'testdata', models
+    db = new dsvdb.Database 'testdata', models
 
 Load all *Fruit* objects from files within directory `testdata/Fruit`.
 
-    db.loadFiles 'Fruit', (err, objs) ->
-     console.log err, objs
+    db.loadFiles 'Fruit', (err, model) ->
+     console.log err, model
 
