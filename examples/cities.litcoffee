@@ -2,7 +2,7 @@
 
 A basic database model
 
-    class City extends dsvdb.Model
+    class City extends dsvdb.Collection
      model: 'City'
 
      @defaults
@@ -25,21 +25,18 @@ A basic database model
        type: 'decimal'
        default: 0
 
-An object of all object models
-
-    models =
-     City: City
-
-Initialize database
-
-    db = new dsvdb.Database '../testdata', models
-
 Load all objects of model *City*
 
 
     console.log 'starting'
     console.time 'load'
-    db.loadFiles 'City', (err, model) ->
+    file = new dsvdb.File
+     collection: City
+     separator: ','
+     file: '../testdata/City/worldcitiespop.csv'
+    file.read (err, collection) ->
      console.timeEnd 'load'
-     console.log err, model.length
+     console.log err
+     console.log '--------------------'
+     console.log collection.length
 

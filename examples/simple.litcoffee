@@ -2,7 +2,7 @@
 
 A basic database model
 
-    class Fruit extends dsvdb.Model
+    class Fruit extends dsvdb.Collection
      model: 'Fruit'
 
      @defaults
@@ -14,19 +14,16 @@ A basic database model
        default: ''
       price:
        type: 'decimal'
-       default: ''
-
-An object of all object models
-
-    models =
-     Fruit: Fruit
-
-Initialize database
-
-    db = new dsvdb.Database '../testdata', models
+       default: 0
 
 Load all objects of model *Fruit*
 
-    db.loadFiles 'Fruit', (err, model) ->
-     console.log err, model
+    dsvdb.loadFiles
+     collection: Fruit
+     separator: ','
+     path: '../testdata/Fruit'
+     (err, collection) ->
+      console.log err
+      console.log '--------------------'
+      console.log collection
 

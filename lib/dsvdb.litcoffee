@@ -265,6 +265,6 @@ Build a model with the structure of defaults. `options.db` is a reference to the
 
 #Exports
 
-    exports.Database = Database
+    exports.File = File
     exports.Collection = Collection
     exports.loadFiles = loadFiles
