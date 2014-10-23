@@ -57,12 +57,12 @@ Find files in a directory
 ## Save and load methods
 
 ###Load files
-This will load all the files of type `model` recursing over the subdirectories.
+This will load all the files of type `collection` recursing over the subdirectories.
 
     loadFiles = (options, callback) ->
 
 ####Options
-`model` - reference to model class
+`collection` - reference to collection class
 `path` - path in filesystem
 `separator` - separator; `,` for CSV files and `\t` for TSV files
 
@@ -77,12 +77,12 @@ This will load all the files of type `model` recursing over the subdirectories.
        callback err, objs
        return
 
-      collection = new Collection
-       model: options.model
+      file = new File
+       collection: options.collection
        file: files[n]
        separator: options.separator
 
-      collection.read (e, obj) ->
+      file.read (e, obj) ->
        if e?
         err.push e
        else
@@ -100,14 +100,12 @@ This will load all the files of type `model` recursing over the subdirectories.
       next()
 
 
-## Collection class
+## File class
 
-A collection is a single file
-
-    class Collection
+    class File
      constructor: (options) ->
       @separator = options.separator
-      @model = new options.model
+      @collection = new options.collection
       @file = options.file
       @parser = @_getParser @separator
 
@@ -139,22 +137,22 @@ A collection is a single file
 
        console.log "parsing"
        try
-        @model.load this, data
+        @collection.load file: this, data: data
        catch e3
         throw e3
         callback msg: "Error loading file: #{@file}", err: e3, null
         return
 
-       callback null, @model
+       callback null, @collection
 
 
 
-## Model class
+## Collection class
 Introduces class level function initialize and include. This class is the base
-class of all other data models. It has `appendt` method to add data.
+class of all other data collections. It has `append` method to add data.
 The structure of the object is defined by `defaults`.
 
-    class Model
+    class Collection
      constructor: ->
       @_init.apply @, arguments
 
@@ -194,7 +192,7 @@ Subclasses can add to default key-values of parent classes
 Build a model with the structure of defaults. `options.db` is a reference to the `Database` object, which will be used when updating the object. `options.file` is the path of the file, which will be null if this is a new object.
 
      @initialize  (options) ->
-      @collections = []
+      @files = []
       @values = {}
       @length = 0
       for k of @_defaults
@@ -213,7 +211,9 @@ Build a model with the structure of defaults. `options.db` is a reference to the
 
 ###Load data
 
-     load: (collection, data) ->
+     load: (options) ->
+      file = options.file
+      data = options.data
       return unless data.length > 1
 
       columns = {}
@@ -241,30 +241,30 @@ Build a model with the structure of defaults. `options.db` is a reference to the
         values.push v
         ++i
 
-      @collections.push
-       collection: collection
+      @files.push
+       file: file
        from: @length
        to: @length + data.length - 1
       @length += data.length - 1
 
-     merge: (model) ->
-      if model.model isnt @model
+     merge: (collection) ->
+      if collection.model isnt @model
        throw new Error 'Incompatible merge'
 
-      for c in model.collections
-       @collections.push
-        collection: c.collection
-        from: c.from + @length
-        to: c.to + @length
+      for f in collection.files
+       @files.push
+        file: f.file
+        from: f.from + @length
+        to: f.to + @length
 
-      @length += model.length
+      @length += collection.length
 
       for k of @_defaults
-       @values[k] = @values[k].concat model.values[k]
+       @values[k] = @values[k].concat collection.values[k]
 
 
 #Exports
 
     exports.Database = Database
-    exports.Model = Model
+    exports.Collection = Collection
     exports.loadFiles = loadFiles
