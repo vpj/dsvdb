@@ -1,4 +1,4 @@
-    dsvdb = require './lib/dsvdb'
+    dsvdb = require '../index'
 
 A basic database model
 
@@ -23,7 +23,7 @@ An object of all object models
 
 Initialize database
 
-    db = new dsvdb.Database 'testdata', models
+    db = new dsvdb.Database '../testdata', models
 
 Load all objects of model *Fruit*
 

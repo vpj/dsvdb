@@ -142,6 +142,11 @@ Loads a single file of type model
      read: (callback) ->
       #TODO Streaming
       fs.readFile @file, encoding: 'utf8', (e1, data) =>
+       console.log 'file read'
+       data = "#{data}"
+       console.log "in string"
+       #data = data.split '\n'
+       #console.log "split"
        if e1?
         callback msg: "Error reading file: #{@file}", err: e1, null
         return
@@ -152,6 +157,7 @@ Loads a single file of type model
         callback msg: "Error parsing file: #{@file}", err: e2, null
         return
 
+       console.log "parsing"
        try
         @model.load @id, data
        catch e3
