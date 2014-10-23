@@ -54,82 +54,62 @@ Find files in a directory
 
      recurse dir
 
-## Database
-Setup the database with a set of models and a directory. The models will reside
-in subdirectories with the same name.
+## Save and load methods
 
-Each model should be a subclass of `Model` class.
-
-    class Database
-     constructor: (path, models, options = {}) ->
-      @models = models
-      @path = path
-      @collections = []
-      @separator = options.separator
-      @separator ?= ','
-
-####Save a set of models
-
-     save: (model, file, callback) ->
-      #TODO
-
-####Load files
+###Load files
 This will load all the files of type `model` recursing over the subdirectories.
 
-     getPath: (model) -> "#{@path}/#{model}"
+    loadFiles = (options, callback) ->
 
-     loadFiles: (model, callback) ->
-      path = "#{@path}/#{model}"
-      objs = null
-      files = []
-      err = []
-      n = 0
+####Options
+`model` - reference to model class
+`path` - path in filesystem
+`separator` - separator; `,` for CSV files and `\t` for TSV files
 
-      loadFile = =>
-       if n >= files.length
-        err = null if err.length is 0
-        callback err, objs
-        return
+     objs = null
+     files = []
+     err = []
+     n = 0
 
-       @loadFile model, files[n], (e, obj) ->
-        if e?
-         err.push e
-        else
-         if not objs?
-          objs = obj
-         else
-          objs.merge obj
-        n++
-        loadFile()
+     next = =>
+      if n >= files.length
+       err = null if err.length is 0
+       callback err, objs
+       return
 
-      findFiles path, (e, f) ->
-       err = e
-       err ?= []
-       files = f
-       loadFile()
-
-####Load file
-Loads a single file of type model
-
-     loadFile: (model, file, callback) ->
       collection = new Collection
-       id: @collections.length
-       model: @models[model]
-       file: file
-       db: this
-      @collections.push collection
-      collection.read callback
+       model: options.model
+       file: files[n]
+       separator: options.separator
+
+      collection.read (e, obj) ->
+       if e?
+        err.push e
+       else
+        if not objs?
+         objs = obj
+        else
+         objs.merge obj
+       n++
+       next()
+
+     findFiles options.path, (e, f) ->
+      err = e
+      err ?= []
+      files = f
+      next()
 
 
 ## Collection class
 
+A collection is a single file
+
     class Collection
      constructor: (options) ->
-      @db = options.db
-      @id = options.id
-      @model = new options.model db: @db
+      @separator = options.separator
+      @model = new options.model
       @file = options.file
-      @parser = @_getParser @db.separator
+      @parser = @_getParser @separator
 
      _getParser: (separator) ->
       if separator is ","
@@ -159,7 +139,7 @@ Loads a single file of type model
 
        console.log "parsing"
        try
-        @model.load @id, data
+        @model.load this, data
        catch e3
         throw e3
         callback msg: "Error loading file: #{@file}", err: e3, null
@@ -214,7 +194,6 @@ Subclasses can add to default key-values of parent classes
 Build a model with the structure of defaults. `options.db` is a reference to the `Database` object, which will be used when updating the object. `options.file` is the path of the file, which will be null if this is a new object.
 
      @initialize  (options) ->
-      @db = options.db
       @collections = []
       @values = {}
       @length = 0
@@ -234,7 +213,7 @@ Build a model with the structure of defaults. `options.db` is a reference to the
 
 ###Load data
 
-     load: (collectionId, data) ->
+     load: (collection, data) ->
       return unless data.length > 1
 
       columns = {}
@@ -263,7 +242,7 @@ Build a model with the structure of defaults. `options.db` is a reference to the
         ++i
 
       @collections.push
-       collection: collectionId
+       collection: collection
        from: @length
        to: @length + data.length - 1
       @length += data.length - 1
@@ -288,3 +267,4 @@ Build a model with the structure of defaults. `options.db` is a reference to the
 
     exports.Database = Database
     exports.Model = Model
+    exports.loadFiles = loadFiles
