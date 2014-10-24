@@ -30,11 +30,10 @@ db.open ->
       return
 
      n++
-     if n % 100 is 0
+     if n % 1000 is 0
       console.log n
-      setTimeout next, 100
-     else
-      setImmediate next
+
+     setImmediate next
 
    next()
    return
