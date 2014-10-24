@@ -201,8 +201,8 @@ Build a model with the structure of defaults. `options.db` is a reference to the
      _getParser: (key) ->
       switch @_defaults[key].type
        when 'string' then (x) -> x
-       when 'number' then Number
-       when 'decimal' then Number
+       when 'number' then parseInt
+       when 'decimal' then parseFloat
 
 ###Load data
 
@@ -214,18 +214,19 @@ Build a model with the structure of defaults. `options.db` is a reference to the
       return unless N > 1
 
       columns = {}
-      for col, c in data
-       k = col[0]
+      header = (col[0] for col in data)
+      for k, c in header
        if @_defaults[k]?
         columns[k] = c
+       else
+        data[c] = null
 
       console.log columns
 
       for k, c of columns
        values = @values[k]
        parser = @_getParser k
-       console.log k, data[c].length
-       console.time k
+       #console.time k
        for d, i in data[c]
         continue if i is 0
         try
@@ -234,9 +235,8 @@ Build a model with the structure of defaults. `options.db` is a reference to the
          #values.push @_defaults[k].default
          throw e
         values.push d
-        if i % 10000 is 0
-         console.log i
-       console.timeEnd k
+       #console.timeEnd k
+       data[c] = null
 
       for k, v of @_defaults when not columns[k]?
        i = 1
