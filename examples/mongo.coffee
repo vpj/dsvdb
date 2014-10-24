@@ -1,11 +1,11 @@
 mongo = require 'mongodb'
 
 console.time 'init'
-db = new mongo.Db 'forestpin2',
+db = new mongo.Db 'cities',
  new mongo.Server 'localhost', 27017, {}
  safe: true
 db.open ->
- db.collection 'Invoice', (e, collection) ->
+ db.collection 'cities', (e, collection) ->
   console.log e
   console.timeEnd 'init'
   console.time 'find'
