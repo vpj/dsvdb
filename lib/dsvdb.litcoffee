@@ -9,7 +9,7 @@ caching.
 *[Github - https://github.com/vpj/dsvdb](https://github.com/vpj/dsvdb)*
 
     fs = require 'fs'
-    d3 = require 'd3'
+    dsv = require '../dsv/'
 
 Find files in a directory
 
@@ -107,20 +107,12 @@ This will load all the files of type `collection` recursing over the subdirector
       @separator = options.separator
       @collection = new options.collection
       @file = options.file
-      @parser = @_getParser @separator
-
-     _getParser: (separator) ->
-      if separator is ","
-       d3.csv.parseRows
-      else if separator is "\t"
-       d3.tsv.parseRows
-      else
-       d3.dsv(separator, "text/plain").parseRows
 
      read: (callback) ->
       #TODO Streaming
+      console.time 'read'
       fs.readFile @file, encoding: 'utf8', (e1, data) =>
-       console.log 'file read'
+       console.timeEnd 'read'
        data = "#{data}"
        console.log "in string"
        #data = data.split '\n'
@@ -129,13 +121,15 @@ This will load all the files of type `collection` recursing over the subdirector
         callback msg: "Error reading file: #{@file}", err: e1, null
         return
 
+       console.time 'parse'
        try
-        data = @parser "#{data}"
+        data = dsv text: "#{data}", separator: @separator
        catch e2
         callback msg: "Error parsing file: #{@file}", err: e2, null
         return
 
-       console.log "parsing"
+       console.timeEnd 'parse'
+       console.time 'collect'
        try
         @collection.load file: this, data: data
        catch e3
@@ -143,6 +137,7 @@ This will load all the files of type `collection` recursing over the subdirector
         callback msg: "Error loading file: #{@file}", err: e3, null
         return
 
+       console.timeEnd 'collect'
        callback null, @collection
 
 
@@ -206,46 +201,56 @@ Build a model with the structure of defaults. `options.db` is a reference to the
      _getParser: (key) ->
       switch @_defaults[key].type
        when 'string' then (x) -> x
-       when 'number' then parseInt
-       when 'decimal' then parseFloat
+       when 'number' then Number
+       when 'decimal' then Number
 
 ###Load data
 
      load: (options) ->
       file = options.file
       data = options.data
-      return unless data.length > 1
+      return unless data.length > 0
+      N = data[0].length
+      return unless N > 1
 
       columns = {}
-      header = data[0]
-      for k, c in header
+      for col, c in data
+       k = col[0]
        if @_defaults[k]?
         columns[k] = c
 
+      console.log columns
+
       for k, c of columns
-       i = 1
        values = @values[k]
        parser = @_getParser k
-       while i < data.length
+       console.log k, data[c].length
+       console.time k
+       for d, i in data[c]
+        continue if i is 0
         try
-         values.push parser data[i][c]
+         d = parser d
         catch e
+         #values.push @_defaults[k].default
          throw e
-        ++i
+        values.push d
+        if i % 10000 is 0
+         console.log i
+       console.timeEnd k
 
       for k, v of @_defaults when not columns[k]?
        i = 1
        values = @values[k]
        v = @_defaults[k].default
-       while i < data.length
+       while i < N
         values.push v
         ++i
 
       @files.push
        file: file
        from: @length
-       to: @length + data.length - 1
-      @length += data.length - 1
+       to: @length + N - 1
+      @length += N - 1
 
      merge: (collection) ->
       if collection.model isnt @model
