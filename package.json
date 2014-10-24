@@ -23,9 +23,7 @@
       "url" : "https://github.com/caolan/async/raw/master/LICENSE"
     }
   ],
-  "dependencies": {
-    "d3": ">=0"
-  },
+  "dependencies": {},
   "bugs": {
     "url": "https://github.com/vpj/dsvdb/issues"
   },
