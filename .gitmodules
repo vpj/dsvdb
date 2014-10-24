@@ -1,0 +1,3 @@
+[submodule "dsv"]
+	path = dsv
+	url = git@github.com:vpj/dsv.git
