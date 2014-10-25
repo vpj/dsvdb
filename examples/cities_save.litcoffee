@@ -32,7 +32,7 @@ Load all objects of model *City*
     file = new dsvdb.File
      collection: City
      separator: ','
-     file: '../testdata/small.csv'
+     file: '../testdata/cities.csv'
     file.read (err, collection) ->
      console.timeEnd 'load'
      console.log err

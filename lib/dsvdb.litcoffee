@@ -118,7 +118,7 @@ This will load all the files of type `collection` recursing over the subdirector
        if f.file.file is @file
         rows = rows.concat [f.from...f.to]
 
-      header = (k for k of values)
+      header = collection.header
       writer = fs.createWriteStream @file, encoding: encoding
       N = rows.length
       console.log header
@@ -127,12 +127,12 @@ This will load all the files of type `collection` recursing over the subdirector
        s = ""
        if n is -1
         for h, i in header
-         s += ',' if i isnt 0
+         s += @separator if i isnt 0
          s += "\"#{h}\""
        else
         r = rows[n]
         for h, i in header
-         s += "," if i isnt 0
+         s += @separator if i isnt 0
          s += "\"#{values[h][n]}\""
 
        s += "\n"
@@ -187,8 +187,22 @@ This will load all the files of type `collection` recursing over the subdirector
        console.timeEnd 'parse'
        console.time 'collect'
        collection = new @collection
+       if data.length <= 0
+        callback null, collection
+        return
+
+       header = collection.header
+       console.log header
+       columns = {}
+       for col, c in data
+        for h in header
+         if col[0] is h
+          columns[h] = col
+          break
+        data[c] = []
+
        try
-        collection.load file: this, data: data
+        collection.load file: this, data: columns
        catch e3
         throw e3
         callback msg: "Error loading file: #{@file}", err: e3, null
@@ -261,31 +275,24 @@ Build a model with the structure of defaults. `options.db` is a reference to the
        when 'number' then parseInt
        when 'decimal' then parseFloat
 
+     @::__defineGetter__ 'header', ->
+      (k for k of @_defaults)
+
 ###Load data
 
      load: (options) ->
       file = options.file
       data = options.data
-      return unless data.length > 0
-      N = data[0].length
-      return unless N > 1
+      N = 0
+      for k, col of data
+       N = col.length
+      return unless N > 0
 
-      columns = {}
-      header = (col[0] for col in data)
-      for k, c in header
-       if @_defaults[k]?
-        columns[k] = c
-       else
-        data[c] = null
-
-      console.log columns
-
-      for k, c of columns
+      for k, col of data
        values = @values[k]
        parser = @_getParser k
        #console.time k
-       for d, i in data[c]
-        continue if i is 0
+       for d in col
         try
          d = parser d
         catch e
@@ -293,10 +300,10 @@ Build a model with the structure of defaults. `options.db` is a reference to the
          throw e
         values.push d
        #console.timeEnd k
-       data[c] = null
+       data[k] = null
 
-      for k, v of @_defaults when not columns[k]?
-       i = 1
+      for k, v of @_defaults when not data[k]?
+       i = 0
        values = @values[k]
        v = @_defaults[k].default
        while i < N
@@ -306,8 +313,8 @@ Build a model with the structure of defaults. `options.db` is a reference to the
       @files.push
        file: file
        from: @length
-       to: @length + N - 1
-      @length += N - 1
+       to: @length + N
+      @length += N
 
      merge: (collection) ->
       if collection.model isnt @model
