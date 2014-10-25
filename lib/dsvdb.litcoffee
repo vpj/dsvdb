@@ -112,8 +112,6 @@ This will load all the files of type `collection` recursing over the subdirector
       encoding = 'utf8'
       console.time 'write'
       values = collection.values
-      for k of values
-       console.log k
       files = collection.files
       rows = []
       for f in files
@@ -148,7 +146,6 @@ This will load all the files of type `collection` recursing over the subdirector
        callback()
 
       write = ->
-       console.log 'writing', line
        ok = true
        while line < N and ok
         s = getLine line
@@ -190,26 +187,8 @@ This will load all the files of type `collection` recursing over the subdirector
        console.timeEnd 'parse'
        console.time 'collect'
        collection = new @collection
-       if data.length <= 0
-        callback null, collection
-        return
-
-       header = collection.header
-       has = {}
-       for h in header
-        has[h] = true
-       console.log header
-       columns = {}
-       for col, c in data
-        k = col[0]
-        if has[k]
-         columns[k] = col
-        data[c] = []
-
-       data = []
-
        try
-        collection.load file: this, data: columns
+        collection.load file: this, data: data
        catch e3
         throw e3
         callback msg: "Error loading file: #{@file}", err: e3, null
@@ -290,29 +269,37 @@ Build a model with the structure of defaults. `options.db` is a reference to the
      load: (options) ->
       file = options.file
       data = options.data
-      N = 0
-      for k, col of data
-       N = col.length
-      return unless N > 0
+      return unless data.length > 0
+      N = data[0].length
+      return unless N > 1
 
-      for k, col of data
+      columns = {}
+      header = (col[0] for col in data)
+      for k, c in header
+       if @_defaults[k]?
+        columns[k] = c
+       else
+        data[c] = null
+
+      console.log columns
+
+      for k, c of columns
        values = @values[k]
        parser = @_getParser k
        #console.time k
-       i = 0
-       while i < N
-        ++i
+       for d, i in data[c]
+        continue if i is 0
         try
-         d = parser col[i - 1]
+         d = parser d
         catch e
          #values.push @_defaults[k].default
          throw e
         values.push d
        #console.timeEnd k
-       data[k] = null
+       data[c] = null
 
-      for k, v of @_defaults when not data[k]?
-       i = 0
+      for k, v of @_defaults when not columns[k]?
+       i = 1
        values = @values[k]
        v = @_defaults[k].default
        while i < N
@@ -322,8 +309,11 @@ Build a model with the structure of defaults. `options.db` is a reference to the
       @files.push
        file: file
        from: @length
-       to: @length + N
-      @length += N
+       to: @length + N - 1
+      @length += N - 1
+
+     add: (options) ->
+      #add new records
 
      merge: (collection) ->
       if collection.model isnt @model
