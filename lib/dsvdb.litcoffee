@@ -112,6 +112,8 @@ This will load all the files of type `collection` recursing over the subdirector
       encoding = 'utf8'
       console.time 'write'
       values = collection.values
+      for k of values
+       console.log k
       files = collection.files
       rows = []
       for f in files
@@ -122,17 +124,18 @@ This will load all the files of type `collection` recursing over the subdirector
       writer = fs.createWriteStream @file, encoding: encoding
       N = rows.length
       console.log header
+      separator = @separator
 
       getLine = (n) ->
        s = ""
        if n is -1
         for h, i in header
-         s += @separator if i isnt 0
+         s += separator if i isnt 0
          s += "\"#{h}\""
        else
         r = rows[n]
         for h, i in header
-         s += @separator if i isnt 0
+         s += separator if i isnt 0
          s += "\"#{values[h][n]}\""
 
        s += "\n"
@@ -192,14 +195,18 @@ This will load all the files of type `collection` recursing over the subdirector
         return
 
        header = collection.header
+       has = {}
+       for h in header
+        has[h] = true
        console.log header
        columns = {}
        for col, c in data
-        for h in header
-         if col[0] is h
-          columns[h] = col
-          break
+        k = col[0]
+        if has[k]
+         columns[k] = col
         data[c] = []
+
+       data = []
 
        try
         collection.load file: this, data: columns
@@ -292,9 +299,11 @@ Build a model with the structure of defaults. `options.db` is a reference to the
        values = @values[k]
        parser = @_getParser k
        #console.time k
-       for d in col
+       i = 0
+       while i < N
+        ++i
         try
-         d = parser d
+         d = parser col[i - 1]
         catch e
          #values.push @_defaults[k].default
          throw e
