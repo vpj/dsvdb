@@ -105,8 +105,57 @@ This will load all the files of type `collection` recursing over the subdirector
     class File
      constructor: (options) ->
       @separator = options.separator
-      @collection = new options.collection
+      @collection = options.collection
       @file = options.file
+
+     write: (collection, callback) ->
+      encoding = 'utf8'
+      console.time 'write'
+      values = collection.values
+      header = (k for k of values)
+      writer = fs.createWriteStream @file, encoding: encoding
+      N = collection.length
+      console.log header
+
+      getLine = (n) ->
+       s = ""
+       if n is -1
+        for h, i in header
+         s += ',' if i isnt 0
+         s += "\"#{h}\""
+       else
+        for h, i in header
+         s += "," if i isnt 0
+         s += "\"#{values[h][n]}\""
+
+       s += "\n"
+
+       return s
+
+      finish = ->
+       console.log 'finished'
+       console.timeEnd 'write'
+       callback()
+
+      write = ->
+       console.log 'writing', line
+       ok = true
+       while line < N and ok
+        s = getLine line
+        ++line
+
+        if line is N
+         writer.write s, encoding, finish
+        else
+         ok = writer.write s, encoding
+
+       if line < N
+        writer.once 'drain', write
+
+      line = -1
+      write()
+
+
 
      read: (callback) ->
       #TODO Streaming
@@ -130,15 +179,16 @@ This will load all the files of type `collection` recursing over the subdirector
 
        console.timeEnd 'parse'
        console.time 'collect'
+       collection = new @collection
        try
-        @collection.load file: this, data: data
+        collection.load file: this, data: data
        catch e3
         throw e3
         callback msg: "Error loading file: #{@file}", err: e3, null
         return
 
        console.timeEnd 'collect'
-       callback null, @collection
+       callback null, collection
 
 
 
