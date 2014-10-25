@@ -1,3 +1,6 @@
 [submodule "dsv"]
 	path = dsv
 	url = git@github.com:vpj/dsv.git
+[submodule "jshelpers"]
+	path = jshelpers
+	url = git@github.com:vpj/jshelpers.git
