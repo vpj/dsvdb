@@ -112,9 +112,15 @@ This will load all the files of type `collection` recursing over the subdirector
       encoding = 'utf8'
       console.time 'write'
       values = collection.values
+      files = collection.files
+      rows = []
+      for f in files
+       if f.file.file is @file
+        rows = rows.concat [f.from...f.to]
+
       header = (k for k of values)
       writer = fs.createWriteStream @file, encoding: encoding
-      N = collection.length
+      N = rows.length
       console.log header
 
       getLine = (n) ->
@@ -124,6 +130,7 @@ This will load all the files of type `collection` recursing over the subdirector
          s += ',' if i isnt 0
          s += "\"#{h}\""
        else
+        r = rows[n]
         for h, i in header
          s += "," if i isnt 0
          s += "\"#{values[h][n]}\""
